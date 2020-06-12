@@ -9,15 +9,24 @@ import torchvision.transforms.functional as TF
 from tqdm import tqdm
 
 
-parser = argparse.ArgumentParser(description='Apply the trained model to create a dataset')
-parser.add_argument('--checkpoint', default=None, type=str, help='checkpoint model to use')
-parser.add_argument('--artifacts', default='', type=str, help='selecting different artifacts type')
-parser.add_argument('--name', default='', type=str, help='additional string added to folder path')
-parser.add_argument('--dataset', default='df2k', type=str, help='selecting different datasets')
-parser.add_argument('--track', default='train', type=str, help='selecting train or valid track')
-parser.add_argument('--num_res_blocks', default=8, type=int, help='number of ResNet blocks')
-parser.add_argument('--cleanup_factor', default=2, type=int, help='downscaling factor for image cleanup')
-parser.add_argument('--upscale_factor', default=4, type=int, choices=[4], help='super resolution upscale factor')
+parser = argparse.ArgumentParser(
+    description='Apply the trained model to create a dataset')
+parser.add_argument('--checkpoint', default=None, type=str,
+                    help='checkpoint model to use')
+parser.add_argument('--artifacts', default='', type=str,
+                    help='selecting different artifacts type')
+parser.add_argument('--name', default='', type=str,
+                    help='additional string added to folder path')
+parser.add_argument('--dataset', default='df2k', type=str,
+                    help='selecting different datasets')
+parser.add_argument('--track', default='train', type=str,
+                    help='selecting train or valid track')
+parser.add_argument('--num_res_blocks', default=8,
+                    type=int, help='number of ResNet blocks')
+parser.add_argument('--cleanup_factor', default=2, type=int,
+                    help='downscaling factor for image cleanup')
+parser.add_argument('--upscale_factor', default=4, type=int,
+                    choices=[1, 4], help='super resolution upscale factor')
 opt = parser.parse_args()
 
 # define input and target directories
@@ -29,14 +38,19 @@ if opt.dataset == 'aim2019':
     path_tdsr = PATHS['datasets']['aim2019'] + '/generated/tdsr/'
     input_source_dir = PATHS['aim2019']['tdsr']['source']
     input_target_dir = PATHS['aim2019']['tdsr']['target']
-    source_files = [os.path.join(input_source_dir, x) for x in os.listdir(input_source_dir) if utils.is_image_file(x)]
-    target_files = [os.path.join(input_target_dir, x) for x in os.listdir(input_target_dir) if utils.is_image_file(x)]
+    source_files = [os.path.join(input_source_dir, x) for x in os.listdir(
+        input_source_dir) if utils.is_image_file(x)]
+    target_files = [os.path.join(input_target_dir, x) for x in os.listdir(
+        input_target_dir) if utils.is_image_file(x)]
 else:
-    path_sdsr = PATHS['datasets'][opt.dataset] + '/generated/' + opt.artifacts + '/' + opt.track + opt.name + '_sdsr/'
-    path_tdsr = PATHS['datasets'][opt.dataset] + '/generated/' + opt.artifacts + '/' + opt.track + opt.name + '_tdsr/'
+    path_sdsr = PATHS['datasets'][opt.dataset] + '/generated/' + \
+        opt.artifacts + '/' + opt.track + opt.name + '_sdsr/'
+    path_tdsr = PATHS['datasets'][opt.dataset] + '/generated/' + \
+        opt.artifacts + '/' + opt.track + opt.name + '_tdsr/'
     input_source_dir = PATHS[opt.dataset][opt.artifacts]['hr'][opt.track]
     input_target_dir = None
-    source_files = [os.path.join(input_source_dir, x) for x in os.listdir(input_source_dir) if utils.is_image_file(x)]
+    source_files = [os.path.join(input_source_dir, x) for x in os.listdir(
+        input_source_dir) if utils.is_image_file(x)]
     target_files = []
 
 sdsr_hr_dir = path_sdsr + 'HR'
@@ -56,7 +70,8 @@ if not os.path.exists(tdsr_lr_dir):
 # prepare neural networks
 model_g = model.Generator(n_res_blocks=opt.num_res_blocks)
 model_g = model_g.eval()
-print('# generator parameters:', sum(param.numel() for param in model_g.parameters()))
+print('# generator parameters:', sum(param.numel()
+                                     for param in model_g.parameters()))
 if torch.cuda.is_available():
     model_g = model_g.cuda()
 
@@ -102,7 +117,8 @@ with torch.no_grad():
         TF.to_pil_image(resize2_cut_img).save(path, 'PNG')
 
         # Generate resize3_cut_img and apply model
-        resize3_cut_img = utils.imresize(resize2_cut_img, 1.0 / opt.upscale_factor, True)
+        resize3_cut_img = utils.imresize(
+            resize2_cut_img, 1.0 / opt.upscale_factor, True)
         if torch.cuda.is_available():
             resize3_cut_img = resize3_cut_img.unsqueeze(0).cuda()
         resize3_cut_noisy_img = model_g(resize3_cut_img).squeeze(0).cpu()
