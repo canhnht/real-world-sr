@@ -7,6 +7,9 @@ import utils
 from PIL import Image
 import torchvision.transforms.functional as TF
 from tqdm import tqdm
+from PIL import PngImagePlugin
+LARGE_ENOUGH_NUMBER = 100
+PngImagePlugin.MAX_TEXT_CHUNK = LARGE_ENOUGH_NUMBER * (1024**2)
 
 
 parser = argparse.ArgumentParser(
@@ -94,8 +97,8 @@ with torch.no_grad():
         input_img = TF.to_tensor(input_img)
 
         # Save HR image as HR image for SDSR
-        path = os.path.join(sdsr_hr_dir, os.path.basename(file))
-        TF.to_pil_image(input_img).save(path, 'PNG')
+        # path = os.path.join(sdsr_hr_dir, os.path.basename(file))
+        # TF.to_pil_image(input_img).save(path, 'PNG')
 
         # Resize HR image, run model and save it as LR image for SDSR
         resize1_img = utils.imresize(input_img, 1.0 / opt.upscale_factor, True)
@@ -104,6 +107,7 @@ with torch.no_grad():
         resize1_noisy_img = model_g(resize1_img).squeeze(0).cpu()
         path = os.path.join(sdsr_lr_dir, os.path.basename(file))
         TF.to_pil_image(resize1_noisy_img).save(path, 'PNG')
+        continue
 
         # Resize HR image to clean it up and make sure it can be resized again
         resize2_img = utils.imresize(input_img, 1.0 / opt.cleanup_factor, True)
